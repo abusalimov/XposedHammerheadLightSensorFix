@@ -24,8 +24,14 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 						int handle = (int) param.args[0];
 						if (handle == 1) {
 							float[] values = (float[]) param.args[1];
+
 							float lux = values[0];
-							Log.v("LightSensorFilter", "lux value: " + lux);
+							if (Float.compare(lux, 30000.0f) == 0) {
+								param.setResult(null);
+								Log.v("LightSensorFilter",
+										"suppresed bogus light sensor value " +
+										lux + "lux");
+							}
 						}
 
 						// invoke the original method
