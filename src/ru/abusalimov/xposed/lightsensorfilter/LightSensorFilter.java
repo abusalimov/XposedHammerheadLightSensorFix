@@ -14,13 +14,15 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 	protected static final float HIGH_BOGUS_LUX = 30000.0f;
 	protected static final float LOW_BOGUS_LUX = 0.0f;
 
+	protected static final float AVG_FIXUP_COEF = 1.3f;
+
 	private MovingAverage mMA = new MovingAverage(MA_WINDOW_SIZE);
 	private int mSeenBogus;
 
 	protected float fixupLuxValue(float lux) {
 		if (Float.compare(lux, HIGH_BOGUS_LUX) == 0) {
 			// it goes crazy and shows 30k lux
-			lux = mMA.getAverage();
+			lux = mMA.getAverage() * AVG_FIXUP_COEF;
 			Log.v("LightSensorFilter", "fixup bogus high: " + lux + "lux");
 
 			// sometimes it drops from 30k to zero occasionally,
@@ -30,7 +32,7 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 
 			if (Float.compare(lux, LOW_BOGUS_LUX) == 0) {
 				// reports zero within few ticks after 30k: LIAR!11
-				lux = mMA.getAverage();
+				lux = mMA.getAverage() / AVG_FIXUP_COEF;
 				Log.v("LightSensorFilter", "fixup bogus low:  " + lux + "lux");
 
 			} else {
