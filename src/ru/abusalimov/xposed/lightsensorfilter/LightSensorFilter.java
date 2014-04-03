@@ -8,6 +8,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class LightSensorFilter implements IXposedHookLoadPackage {
 
+	protected static final int ALS_HANDLE = 1;
+	protected static final float BOGUS_LUX_VALUE = 30000.0f;
+
 	@Override
 	public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
 		XposedHelpers.findAndHookMethod(
@@ -22,11 +25,11 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 					protected void beforeHookedMethod(MethodHookParam param)
 							throws Throwable {
 						int handle = (int) param.args[0];
-						if (handle == 1) {
+						if (handle == ALS_HANDLE) {
 							float[] values = (float[]) param.args[1];
 
 							float lux = values[0];
-							if (Float.compare(lux, 30000.0f) == 0) {
+							if (Float.compare(lux, BOGUS_LUX_VALUE) == 0) {
 								param.setResult(null);
 								Log.v("LightSensorFilter",
 										"suppresed bogus light sensor value " +
