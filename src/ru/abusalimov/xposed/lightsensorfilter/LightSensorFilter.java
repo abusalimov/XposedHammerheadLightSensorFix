@@ -8,8 +8,21 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class LightSensorFilter implements IXposedHookLoadPackage {
 
-	protected static final int ALS_HANDLE = 1;
+	protected static final int MA_WINDOW_SIZE = 7;
 	protected static final float BOGUS_LUX_VALUE = 30000.0f;
+
+	private MovingAverage mMA = new MovingAverage(MA_WINDOW_SIZE);
+
+	protected float fixupLuxValue(float lux) {
+		if (Float.compare(lux, BOGUS_LUX_VALUE) == 0) {
+			lux = mMA.getAverage();
+			Log.v("LightSensorFilter", "fixup bogus with: " + lux + "lux");
+		}
+
+		// TODO Does it need to be fed back to MA unconditionally?
+		mMA.handleNewValue(lux);
+		return lux;
+	}
 
 	@Override
 	public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
@@ -28,6 +41,8 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 
 				new XC_MethodHook() {
 
+					protected static final int ALS_HANDLE = 1;
+
 					@Override
 					protected void beforeHookedMethod(MethodHookParam param)
 							throws Throwable {
@@ -36,17 +51,16 @@ public class LightSensorFilter implements IXposedHookLoadPackage {
 						// We probably could perform more reliable checks
 						// for a matching sensor here, but... who cares?
 						// On Hammerhead light sensor seems to have handle 1.
-						if (handle == ALS_HANDLE) {
-							float[] values = (float[]) param.args[1];
-
-							float lux = values[0];
-							if (Float.compare(lux, BOGUS_LUX_VALUE) == 0) {
-								param.setResult(null);
-								Log.v("LightSensorFilter",
-										"suppresed bogus light sensor value " +
-										lux + "lux");
-							}
+						if (handle != ALS_HANDLE) {
+							// not an Ambient Light Sensor
+							return;
 						}
+
+						float[] values = (float[]) param.args[1];
+
+						float lux = values[0];
+						lux = fixupLuxValue(lux);
+						values[0] = lux;
 
 						// invoke the original method
 					}
