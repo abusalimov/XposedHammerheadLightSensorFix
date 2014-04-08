@@ -24,4 +24,6 @@ XDA topics
 
 The solution
 ------------
-This project is based on [Xposed framework](http://repo.xposed.info/), which is used to intercept and override certain methods of Android framework itself.
+This project is based on [Xposed framework](http://repo.xposed.info/), which is used to intercept and override certain methods of Android framework itself. Please install it from a [module page](http://repo.xposed.info/module/ru.abusalimov.xposed.lightsensorfilter).
+
+**TBD**
