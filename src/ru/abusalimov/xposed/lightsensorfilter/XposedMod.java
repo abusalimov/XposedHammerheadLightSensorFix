@@ -37,7 +37,7 @@ public class XposedMod implements IXposedHookLoadPackage {
 			float[] values = (float[]) param.args[1];
 
 			float lux = values[0];
-			lux = mFilter.fixupLuxValue(lux);
+			lux = mFilter.fixupLuxValue(lux, timestamp);
 			values[0] = lux;
 
 			// invoke the original method

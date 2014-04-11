@@ -8,64 +8,65 @@ import android.util.Log;
  */
 public class LightSensorFilter {
 
-	public static final int DEFAULT_SMOOTH_WINDOW = 7;
-	public static final float DEFAULT_SMOOTH_FIXUP = 1.3f;
+	public static final long DEFAULT_SMOOTH_WINDOW = 3000l * 1000 * 1000;
+	public static final double DEFAULT_SPIKE_FIXUP = 1.1;
 
-	protected static final float HIGH_BOGUS_LUX = 30000.0f;
-	protected static final float LOW_BOGUS_LUX = 0.0f;
+	protected static final float LOW_SPIKE_LUX = 0.0f;
+	protected static final float HIGH_SPIKE_LUX = 30000.0f;
 
-	private final MovingAverage mMovingAverage;
-	private int mSeenBogus;
+	private final long mSmoothWindow;
+	private final double mSpikeFixup;
 
-	private final int mSmoothWindow;
-	private final float mSmoothFixup;
+	private final MovingAverage mFilter;
+	private long mLastSpikeTimestamp;
 
 	public LightSensorFilter() {
-		this(DEFAULT_SMOOTH_WINDOW, DEFAULT_SMOOTH_FIXUP);
+		this(DEFAULT_SMOOTH_WINDOW, DEFAULT_SPIKE_FIXUP);
 	}
 
 	/**
-	 * @param smoothWindow window size for smoothing bogus values
-	 * @param smoothFixup coefficient to use to adjust smoothed values
+	 * @param smoothWindow window size for smoothing (in nanoseconds)
+	 * @param spikeFixup coefficient to use to adjust spikes
 	 */
-	public LightSensorFilter(int smoothWindow, float smoothFixup) {
+	public LightSensorFilter(long smoothWindow, double spikeFixup) {
 		mSmoothWindow = smoothWindow;
-		mSmoothFixup = smoothFixup;
-		mMovingAverage = new MovingAverage(smoothWindow);
+		mSpikeFixup = spikeFixup;
+
+		mFilter = new MovingAverage(smoothWindow);
 	}
 
-	public float fixupLuxValue(float lux) {
-		if (Float.compare(lux, HIGH_BOGUS_LUX) == 0) {
+	public float fixupLuxValue(float lux, long timestamp) {
+		double newLux = lux;
+
+		// In this case the use of exact float comparison is intended.
+		if (lux == HIGH_SPIKE_LUX) {
 			// it goes crazy and shows 30k lux
-			lux = mMovingAverage.getAverage() * mSmoothFixup;
-			Log.v("LightSensorFilter", "fixup bogus high: " + lux + "lux");
+			newLux = mFilter.getAverage() * mSpikeFixup;
+			Log.d("LightSensorFilter", "fixup high spike: " + newLux + " lux");
 
 			// sometimes it drops from 30k to zero occasionally,
 			// be ready for fluctuations in the nearest future
-			mSeenBogus = mSmoothWindow;
-		} else if (mSeenBogus != 0) {
+			mLastSpikeTimestamp = timestamp;
 
-			if (Float.compare(lux, LOW_BOGUS_LUX) == 0) {
-				// reports zero within few ticks after 30k: LIAR!11
-				lux = mMovingAverage.getAverage() / mSmoothFixup;
-				Log.v("LightSensorFilter", "fixup bogus low:  " + lux + "lux");
+		} else if (lux == LOW_SPIKE_LUX &&
+				timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
 
-			} else {
-				--mSeenBogus;
-			}
+			// reports zero within few ticks after 30k: outlier? out liar!
+			newLux = mFilter.getAverage() / mSpikeFixup;
+			Log.d("LightSensorFilter", "fixup low spike:  " + newLux + " lux");
 		}
 
-		// TODO Does it need to be fed back to MA unconditionally?
-		mMovingAverage.handleNewValue(lux);
-		return lux;
+		mFilter.addValue(newLux, timestamp);
+
+		return (float) newLux;
 	}
 
-	public int getSmoothWindow() {
+	public long getSmoothWindow() {
 		return mSmoothWindow;
 	}
 
-	public float getSmoothFixup() {
-		return mSmoothFixup;
+	public double getSpikeFixup() {
+		return mSpikeFixup;
 	}
 
 }

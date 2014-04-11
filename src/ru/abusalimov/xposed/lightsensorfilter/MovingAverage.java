@@ -1,45 +1,38 @@
 package ru.abusalimov.xposed.lightsensorfilter;
 
 /**
- * Simple Moving Average filter.
+ * Exponential Moving Average filter.
  * @author Eldar Abusalimov
  */
 public class MovingAverage {
-	private float mSum;
-	private float[] mValues;
-	private int mIndex;
-	
-	public MovingAverage(int windowSize) {
-		if (windowSize <= 0) {
-			throw new IllegalArgumentException("windowSize must be positive");
-		}
-		mValues = new float[windowSize];
-	}
-	
-	public MovingAverage(int windowSize, float initial) {
-		this(windowSize);
-		
-		for (int i = 0; i < windowSize; i++) {
-			handleNewValue(initial);
-		}
-	}
-	
-	public void handleNewValue(float newValue) {
-		int i = mIndex;
 
-		float oldValue = mValues[i];
-		mSum += newValue - oldValue;
-		mValues[i] = newValue;
-		
-		mIndex = (i + 1) % mValues.length;
+	private final double mAlphaTimescale;
+
+	private double mSum;
+	private long mLastTimestamp;
+
+	public MovingAverage(long halfLifeTime) {
+		// not a real "half": in exp we use a power of 'e', not 2.
+		this(1.0 / halfLifeTime);
 	}
 
-	public float getAverage() {
-		return mSum / mValues.length;
+	public MovingAverage(double alphaTimescale) {
+		mAlphaTimescale = alphaTimescale;
 	}
-	
-	public int getWindowSize() {
-		return mValues.length;
+
+	public void addValue(double value, long timestamp) {
+		long elapsed = timestamp - mLastTimestamp;
+
+		if (elapsed > 0) {
+			double alpha = -Math.expm1(-mAlphaTimescale * elapsed);
+			mSum += alpha * (value - mSum);
+		}
+
+		mLastTimestamp = timestamp;
 	}
-	
+
+	public double getAverage() {
+		return mSum;
+	}
+
 }
