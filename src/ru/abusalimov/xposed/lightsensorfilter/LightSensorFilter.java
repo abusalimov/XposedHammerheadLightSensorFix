@@ -14,6 +14,8 @@ public class LightSensorFilter {
 	protected static final float LOW_SPIKE_LUX = 0.0f;
 	protected static final float HIGH_SPIKE_LUX = 30000.0f;
 
+	private static final String LOG_TAG = LightSensorFilter.class.getSimpleName();
+
 	private final long mSmoothWindow;
 	private final double mSpikeFixup;
 
@@ -42,7 +44,7 @@ public class LightSensorFilter {
 		if (lux == HIGH_SPIKE_LUX) {
 			// it goes crazy and shows 30k lux
 			newLux = mFilter.getAverage() * mSpikeFixup;
-			Log.d("LightSensorFilter", "fixup high spike: " + newLux + " lux");
+			Log.d(LOG_TAG, "fixup high spike: " + newLux + " lux");
 
 			// sometimes it drops from 30k to zero occasionally,
 			// be ready for fluctuations in the nearest future
@@ -53,7 +55,7 @@ public class LightSensorFilter {
 
 			// reports zero within few ticks after 30k: outlier? out liar!
 			newLux = mFilter.getAverage() / mSpikeFixup;
-			Log.d("LightSensorFilter", "fixup low spike:  " + newLux + " lux");
+			Log.d(LOG_TAG, "fixup low spike:  " + newLux + " lux");
 		}
 
 		mFilter.addValue(newLux, timestamp);
