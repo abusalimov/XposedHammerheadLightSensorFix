@@ -1,29 +1,30 @@
 Nexus 5 Light Sensor Fix
 ========================
 
-This project addresses some issues with Ambient Light Sensor of Nexus 5 appearing under certain lighting conditions. These issues are discussed on related XDA Developers threads.
+This project addresses some issues with Ambient Light Sensor of Nexus 5 appearing under certain lighting conditions, that make stock auto-brightness effectively unusable indoors.
 
-XDA topics
-----------
-
-[Two major issues with the Nexus 5 ambient light sensor](http://forum.xda-developers.com/google-nexus-5/help/major-issues-nexus-5-ambient-light-t2537978)
-
-> 1. The sensor reading often jumps to 30000lx momentarily, (measured using Lux Dash in Debug mode), and so the phone blinds you for while. This happens in a repeatable fashion when you hold the phone at certain angles. Try it yourself.
-> 2. The N5 reads zero lux even in moderate/dim light
-([Posted by Palmadores](http://forum.xda-developers.com/showpost.php?p=47725284&postcount=1))
-
-<p>
-
-> Using the Lux app debug mode I rotated the phone while in a room lit with incandescent bulbs and one lit with daylight. When rotating the phone I sometimes see a spike of 30000 lx but more importantly the sensor drops to 0 even though there is plenty of ambient light. During daylight I don't see the 30000 lx spikes but I still see the sensor dropping to 0 when there's plenty of ambient light.
-([Posted by exorz](http://forum.xda-developers.com/showpost.php?p=48845073&postcount=13))
-
-[Is the Auto-Brightness Functionality wonky on the Nexus5?](http://forum.xda-developers.com/google-nexus-5/help/auto-brightness-functionality-wonky-t2554153)
-> I think it may be bugged with Halogen lighting (correct me if I'm wrong). My home is ~ 18 years old, and we have some bulbs that have not been changed yet (yellow). Sometimes when I use my N5 under those lighting, the sensors go whack and don't register properly picking up 0lx, then spike up to 30000lx. Once I move to areas in the house with newer bulbs, the sensors work normal, picking up the right readings.
-([Posted by Aria807](http://forum.xda-developers.com/showpost.php?p=48111193&postcount=4))
-
+The issue
+---------
+Sometimes the light sensor goes crazy and reports 30000 lux even in a dim light because of what auto-brightness attempts to blind you in a moment. These random spikes happen when you hold a phone at certain angles and depend on light bulbs used in a room.
 
 The solution
 ------------
-This project is based on [Xposed framework](http://repo.xposed.info/), which is used to intercept and override certain methods of Android framework itself. Please install it from a [module page](http://repo.xposed.info/module/ru.abusalimov.xposed.lightsensorfilter).
+The fix is implemented as an Xposed module.
 
-**TBD**
+Basically, it is a filter inserted near a point where native HAL communicates to Android framework. It intercepts all sensor readings and replaces abnormal 30000 lux (and 0 lux following 30000) with an averaged value from a sliding window. This affects any process that use Android sensors API including system_process, so that default Android auto-brightness works fine too (no need to use apps like Lux Dash to workaround the issue).
+
+Installation
+------------
+ 1. Download and install [Xposed framework](http://repo.xposed.info/module/de.robv.android.xposed.installer)
+ 2. Search for and install **[Nexus 5 Light Sensor fix](http://repo.xposed.info/module/ru.abusalimov.xposed.lightsensorfilter)** module
+ 3. Activate the module and reboot
+
+Usage
+-----
+The module provides no user interface, nor it runs any services in a background. It only injects a proxy method to the implementation of Android sensors API. You won't be able to notice it in the main menu or in a task manager. Think of it as a patch that can be turned on and off through Xposed installer.
+
+Links
+-----
+ - [Module page](http://repo.xposed.info/module/ru.abusalimov.xposed.lightsensorfilter) on Xposed repo
+ - [Discussion](http://forum.xda-developers.com/xposed/modules/mod-ambient-light-sensor-fix-nexus-5-t2717309) thread on XDA
+ - [Original](http://forum.xda-developers.com/google-nexus-5/help/major-issues-nexus-5-ambient-light-t2537978/post51619083) module announcement and discussion on the issue
