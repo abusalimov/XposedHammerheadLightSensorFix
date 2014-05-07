@@ -12,6 +12,7 @@ public class LightSensorFilter {
 	public static final double DEFAULT_SPIKE_FIXUP = 1.1;
 
 	protected static final float LOW_SPIKE_LUX = 0.0f;
+	protected static final float LOW_REPLACEMENT_LUX = 1.0f;
 	protected static final float HIGH_SPIKE_10K_LUX = 10000.0f;
 	protected static final float HIGH_SPIKE_30K_LUX = 30000.0f;
 
@@ -53,12 +54,15 @@ public class LightSensorFilter {
 
 		} else if (lux == LOW_SPIKE_LUX &&
 				timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
-
 			// reports zero within few ticks after 30k: outlier? out liar!
 			newLux = mFilter.getAverage() / mSpikeFixup;
 			Log.d(LOG_TAG, "fixup low spike:  " + newLux + " lux");
 
 		} else {
+			if (lux == LOW_SPIKE_LUX) {
+				newLux = LOW_REPLACEMENT_LUX;
+			}
+
 			mFilter.addValue(newLux, timestamp);
 		}
 
