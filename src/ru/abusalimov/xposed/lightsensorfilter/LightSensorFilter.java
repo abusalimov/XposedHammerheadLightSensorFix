@@ -12,7 +12,8 @@ public class LightSensorFilter {
 	public static final double DEFAULT_SPIKE_FIXUP = 1.1;
 
 	protected static final float LOW_SPIKE_LUX = 0.0f;
-	protected static final float HIGH_SPIKE_LUX = 30000.0f;
+	protected static final float HIGH_SPIKE_10K_LUX = 10000.0f;
+	protected static final float HIGH_SPIKE_30K_LUX = 30000.0f;
 
 	private static final String LOG_TAG = LightSensorFilter.class.getSimpleName();
 
@@ -41,8 +42,8 @@ public class LightSensorFilter {
 		double newLux = lux;
 
 		// In this case the use of exact float comparison is intended.
-		if (lux == HIGH_SPIKE_LUX) {
-			// it goes crazy and shows 30k lux
+		if (lux == HIGH_SPIKE_30K_LUX || lux == HIGH_SPIKE_10K_LUX) {
+			// it goes crazy and shows 30k lux (10k on some devices)
 			newLux = mFilter.getAverage() * mSpikeFixup;
 			Log.d(LOG_TAG, "fixup high spike: " + newLux + " lux");
 
