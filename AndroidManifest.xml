@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.abusalimov.xposed.lightsensorfilter"
-    android:versionCode="2"
-    android:versionName="1.1" >
+    android:versionCode="3"
+    android:versionName="1.2" >
 
     <uses-sdk
         android:minSdkVersion="16"
@@ -14,7 +14,7 @@
         android:theme="@style/AppTheme" >
         <meta-data android:value="true" android:name="xposedmodule"/>
         <meta-data android:value="2.0*" android:name="xposedminversion"/>
-        <meta-data android:value="Workaround for Hammerhead (Nexus 5) Ambient Light Sensor suddenly reporting 30000 lux." android:name="xposeddescription"/>
+        <meta-data android:value="Workaround for Nexus 5 Ambient Light Sensor suddenly reporting inadequate values (like 30000 lux)." android:name="xposeddescription"/>
     </application>
 
 </manifest>
