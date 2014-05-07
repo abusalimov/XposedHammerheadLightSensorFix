@@ -57,9 +57,10 @@ public class LightSensorFilter {
 			// reports zero within few ticks after 30k: outlier? out liar!
 			newLux = mFilter.getAverage() / mSpikeFixup;
 			Log.d(LOG_TAG, "fixup low spike:  " + newLux + " lux");
-		}
 
-		mFilter.addValue(newLux, timestamp);
+		} else {
+			mFilter.addValue(newLux, timestamp);
+		}
 
 		return (float) newLux;
 	}
