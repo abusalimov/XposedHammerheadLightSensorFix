@@ -40,27 +40,35 @@ public class LightSensorFilter {
 	}
 
 	public float fixupLuxValue(float lux, long timestamp) {
+		double averagedLux = Double.NaN;
+
 		// In this case the use of exact float comparison is intended.
 		if (lux == HIGH_SPIKE_30K_LUX || lux == HIGH_SPIKE_10K_LUX) {
 			// it goes crazy and shows 30k lux (10k on some devices)
-			lux = (float) mFilter.getAverage() * mSpikeFixup;
+			averagedLux = mFilter.getAverage() * mSpikeFixup;
 			Log.d(LOG_TAG, "fixup high spike: " + lux + " lux");
 
 			// sometimes it drops from 30k to zero occasionally,
 			// be ready for fluctuations in the nearest future
 			mLastSpikeTimestamp = timestamp;
 
-		} else if (lux == LOW_SPIKE_LUX &&
-				timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
-			// reports zero within few ticks after 30k: outlier? out liar!
-			lux = (float) mFilter.getAverage() / mSpikeFixup;
-			Log.d(LOG_TAG, "fixup low spike:  " + lux + " lux");
+		} else if (lux == LOW_SPIKE_LUX) {
 
-		} else {
-			if (lux == LOW_SPIKE_LUX) {
+			if (timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
+				// reports zero within few ticks after 30k: outlier? out liar!
+				averagedLux = mFilter.getAverage() / mSpikeFixup;
+				Log.d(LOG_TAG, "fixup low spike:  " + lux + " lux");
+
+			} else {
+				// I bet the previous one was 1 lux:
+				// they often change over each other (0 <-> 1) in a dim light
 				lux = LOW_REPLACEMENT_LUX;
 			}
+		}
 
+		if (!Double.isNaN(averagedLux)) {
+			lux = (float) averagedLux;
+		} else {
 			mFilter.addValue(lux, timestamp);
 		}
 
