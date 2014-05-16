@@ -12,7 +12,6 @@ public class LightSensorFilter {
 	public static final float DEFAULT_SPIKE_FIXUP = 1.1f;
 
 	protected static final float LOW_SPIKE_LUX = 0.0f;
-	protected static final float LOW_REPLACEMENT_LUX = 1.0f;
 	protected static final float HIGH_SPIKE_10K_LUX = 10000.0f;
 	protected static final float HIGH_SPIKE_30K_LUX = 30000.0f;
 
@@ -52,18 +51,12 @@ public class LightSensorFilter {
 			// be ready for fluctuations in the nearest future
 			mLastSpikeTimestamp = timestamp;
 
-		} else if (lux == LOW_SPIKE_LUX) {
+		} else if (lux == LOW_SPIKE_LUX &&
+				timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
+			// reports zero within few ticks after 30k: outlier? out liar!
+			averagedLux = mFilter.getAverage() / mSpikeFixup;
+			Log.d(LOG_TAG, "fixup low spike:  " + lux + " lux");
 
-			if (timestamp - mLastSpikeTimestamp < mSmoothWindow * 2) {
-				// reports zero within few ticks after 30k: outlier? out liar!
-				averagedLux = mFilter.getAverage() / mSpikeFixup;
-				Log.d(LOG_TAG, "fixup low spike:  " + lux + " lux");
-
-			} else {
-				// I bet the previous one was 1 lux:
-				// they often change over each other (0 <-> 1) in a dim light
-				lux = LOW_REPLACEMENT_LUX;
-			}
 		}
 
 		if (!Double.isNaN(averagedLux)) {
